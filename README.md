@@ -2,7 +2,6 @@
 
 
 MAITRI is a real-time emotion detection and offline speech recognition prototype using Python.
-
 ## Features
 - Detects emotions via webcam (happy, sad, angry, etc.)
 - Displays emotions both on screen and in console
