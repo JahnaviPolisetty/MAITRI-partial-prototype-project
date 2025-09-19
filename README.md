@@ -16,6 +16,19 @@ MAITRI is a real-time emotion detection and offline speech recognition prototype
 ## Setup Instructions
 
 1. **Clone the repository**
-```bash
+bash
 git clone https://github.com/your-username/MAITRI-Prototype.git
+
+## Required libraries
 cd MAITRI-Prototype
+opencv-python
+deepface
+pyttsx3
+vosk
+pyaudio
+numpy
+pandas
+matplotlib
+
+
+
