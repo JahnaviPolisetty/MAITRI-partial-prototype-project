@@ -1,9 +1,6 @@
 
 ---The code 
 
-## 4️⃣ `main.py` (adjusted for GitHub)
-
-```python
 import cv2
 from deepface import DeepFace
 import pyttsx3
@@ -12,15 +9,18 @@ import pyaudio
 import json
 
 # -------------------- Setup --------------------
+# Text-to-speech engine
 engine = pyttsx3.init()
+
+# Webcam
 cap = cv2.VideoCapture(0)
 
-# Vosk model path (adjust if different)
-vosk_model_path = "vosk-model"  # folder in repo
+# Vosk model path
+vosk_model_path = "D:/vosk/vosk-model-small-en-us-0.15"
 model = Model(vosk_model_path)
 recognizer = KaldiRecognizer(model, 16000)
 
-# Initialize microphone
+# Microphone stream
 p = pyaudio.PyAudio()
 stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8000)
 stream.start_stream()
@@ -33,18 +33,26 @@ while True:
     if not ret:
         break
 
-    # Emotion detection
+    # Convert frame to RGB & resize for faster detection
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    small_frame = cv2.resize(rgb_frame, (0, 0), fx=0.5, fy=0.5)
+
+    # -------------------- Emotion Detection --------------------
     try:
-        result = DeepFace.analyze(frame, actions=['emotion'], enforce_detection=False)
-        emotion = result[0]['dominant_emotion']
-    except:
+        result = DeepFace.analyze(small_frame, actions=['emotion'], enforce_detection=False)
+        if isinstance(result, list) and len(result) > 0:
+            emotion = result[0]['dominant_emotion']
+        else:
+            emotion = "unknown"
+    except Exception:
         emotion = "unknown"
 
-    # Display emotion on screen
-    cv2.putText(frame, f"Emotion: {emotion}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-    print(f"Detected Emotion: {emotion}")
+    # Display emotion on camera & console
+    cv2.putText(frame, f"Emotion: {emotion}", (50, 50),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    print("Detected Emotion:", emotion)
 
-    # Speech recognition (offline)
+    # -------------------- Speech Recognition --------------------
     data = stream.read(4000, exception_on_overflow=False)
     if recognizer.AcceptWaveform(data):
         speech_result = json.loads(recognizer.Result())
@@ -54,13 +62,15 @@ while True:
     else:
         user_text = ""
 
-    # Simple response logic
+    # -------------------- Response Logic --------------------
     if emotion == "happy":
         response = "I see you are happy! Keep smiling."
     elif emotion == "sad":
         response = "You look a bit sad. Remember, you are not alone."
     elif emotion == "angry":
         response = "I sense some anger. Try taking a deep breath."
+    elif emotion == "surprise":
+        response = "Oh! That looks surprising."
     else:
         response = f"You seem {emotion}. How are you feeling today?"
 
@@ -72,7 +82,7 @@ while True:
     cv2.imshow("MAITRI Prototype", frame)
 
     # Quit on 'q'
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(30) & 0xFF == ord('q'):
         break
 
 # -------------------- Cleanup --------------------
@@ -81,3 +91,4 @@ cv2.destroyAllWindows()
 stream.stop_stream()
 stream.close()
 p.terminate()
+
