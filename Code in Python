@@ -1,0 +1,83 @@
+
+---The code 
+
+## 4️⃣ `main.py` (adjusted for GitHub)
+
+```python
+import cv2
+from deepface import DeepFace
+import pyttsx3
+from vosk import Model, KaldiRecognizer
+import pyaudio
+import json
+
+# -------------------- Setup --------------------
+engine = pyttsx3.init()
+cap = cv2.VideoCapture(0)
+
+# Vosk model path (adjust if different)
+vosk_model_path = "vosk-model"  # folder in repo
+model = Model(vosk_model_path)
+recognizer = KaldiRecognizer(model, 16000)
+
+# Initialize microphone
+p = pyaudio.PyAudio()
+stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8000)
+stream.start_stream()
+
+print("MAITRI Prototype Running... Press 'q' to exit")
+
+# -------------------- Main Loop --------------------
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Emotion detection
+    try:
+        result = DeepFace.analyze(frame, actions=['emotion'], enforce_detection=False)
+        emotion = result[0]['dominant_emotion']
+    except:
+        emotion = "unknown"
+
+    # Display emotion on screen
+    cv2.putText(frame, f"Emotion: {emotion}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    print(f"Detected Emotion: {emotion}")
+
+    # Speech recognition (offline)
+    data = stream.read(4000, exception_on_overflow=False)
+    if recognizer.AcceptWaveform(data):
+        speech_result = json.loads(recognizer.Result())
+        user_text = speech_result.get("text", "")
+        if user_text:
+            print("User said:", user_text)
+    else:
+        user_text = ""
+
+    # Simple response logic
+    if emotion == "happy":
+        response = "I see you are happy! Keep smiling."
+    elif emotion == "sad":
+        response = "You look a bit sad. Remember, you are not alone."
+    elif emotion == "angry":
+        response = "I sense some anger. Try taking a deep breath."
+    else:
+        response = f"You seem {emotion}. How are you feeling today?"
+
+    # Speak response
+    engine.say(response)
+    engine.runAndWait()
+
+    # Show webcam
+    cv2.imshow("MAITRI Prototype", frame)
+
+    # Quit on 'q'
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# -------------------- Cleanup --------------------
+cap.release()
+cv2.destroyAllWindows()
+stream.stop_stream()
+stream.close()
+p.terminate()
