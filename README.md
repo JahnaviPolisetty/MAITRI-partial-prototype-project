@@ -30,5 +30,11 @@ numpy
 pandas
 matplotlib
 
-
+## VOSK MODEL INSTALLATION 
+visit https://alphacephei.com/vosk/models
+download offline model vosk-model-small-en-us-0.15
+create a folder in your pc 
+take the path of vosk file 
+place in the code
+it is for offline speech recognition
 
